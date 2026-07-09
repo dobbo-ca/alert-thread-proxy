@@ -1,0 +1,9 @@
+{
+  "eventId": "3f9c2b1a7e4d5f60918273645bdcafe0",
+  "state": "ALERT",
+  "title": "🚨 Alert for \"prod-5xx-errors\" - 42 lines found",
+  "body": "Group: \"api-gateway\"\n42 lines found, which meets or exceeds the threshold of 10 lines\nTime Range (UTC): [2026-07-09 14:00:00 - 2026-07-09 14:05:00)",
+  "link": "https://hyperdx.dobbo.ca/search/64f1a2b3c4d5e6f708192a3b?from=1783605600000&to=1783605900000&isLive=false",
+  "startTime": 1783605600000,
+  "endTime": 1783605900000
+}
