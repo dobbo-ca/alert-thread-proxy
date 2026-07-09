@@ -1,0 +1,14 @@
+# Go
+/alert-thread-proxy
+*.exe
+*.test
+*.out
+/dist/
+/bin/
+
+# graphify knowledge graph (rebuilt locally)
+/graphify-out/
+
+# env / local
+.env
+.env.local
