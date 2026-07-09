@@ -70,7 +70,14 @@ func (e *Engine) handleFiring(ev event.AlertEvent) error {
 		}
 		return nil
 	}
-	// new incident (Task 7 inserts storm handling ahead of this line)
+	// new incident: record it in the storm window and decide routing.
+	e.recordNewFiring()
+	if e.stormActive() {
+		return e.openStormIncident(ev, key)
+	}
+	if len(e.stormWindow) >= e.cfg.StormThreshold {
+		return e.enterStorm(ev, key)
+	}
 	return e.openNormalIncident(ev, key)
 }
 
@@ -110,6 +117,49 @@ func (e *Engine) Sweep() {
 	if e.storm != nil && e.now().After(e.storm.Expires) {
 		e.storm = nil
 	}
+}
+
+func (e *Engine) recordNewFiring() {
+	now := e.now()
+	cutoff := now.Add(-e.cfg.StormWindow)
+	kept := e.stormWindow[:0]
+	for _, t := range e.stormWindow {
+		if t.After(cutoff) {
+			kept = append(kept, t)
+		}
+	}
+	e.stormWindow = append(kept, now)
+}
+
+func (e *Engine) stormActive() bool {
+	return e.storm != nil && !e.now().After(e.storm.Expires)
+}
+
+func (e *Engine) enterStorm(ev event.AlertEvent, key string) error {
+	ts, err := e.slack.PostMessage(e.stormText(len(e.stormWindow)), "")
+	if err != nil {
+		return err
+	}
+	e.storm = &stormState{TS: ts, Count: 0, Expires: e.now().Add(e.cfg.StormWindow)}
+	return e.openStormIncident(ev, key)
+}
+
+func (e *Engine) openStormIncident(ev event.AlertEvent, key string) error {
+	if _, err := e.slack.PostMessage(e.firingText(ev), e.storm.TS); err != nil {
+		return err
+	}
+	e.storm.Count++
+	e.storm.Expires = e.now().Add(e.cfg.StormWindow)
+	if err := e.slack.UpdateMessage(e.storm.TS, e.stormText(e.storm.Count)); err != nil {
+		return err
+	}
+	now := e.now()
+	e.incidents[key] = &Incident{TS: e.storm.TS, FirstSeen: now, LastReminder: now, InStorm: true}
+	return nil
+}
+
+func (e *Engine) stormText(n int) string {
+	return fmt.Sprintf("⚠️ *%d alerts firing* (storm)", n)
 }
 
 func (e *Engine) firingText(ev event.AlertEvent) string {
