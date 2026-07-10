@@ -31,5 +31,5 @@ See `docs/plan.md`. Tasks 1–9 (this repo) build the service; Tasks 10–12 (de
 HyperDX wiring) live in the `k8s-dobbolab` repo and need cluster/HyperDX access.
 
 Conventions: Go, module `github.com/dobbo-ca/alert-thread-proxy`, image
-`ghcr.io/dobbo-ca/alert-thread-proxy`, no third-party Go deps, injected clock,
+`ghcr.io/dobbo-ca/containers/alert-thread-proxy`, no third-party Go deps, injected clock,
 single replica. See `CLAUDE.md`.
