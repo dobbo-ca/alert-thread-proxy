@@ -22,7 +22,7 @@ fails → minimal impl → run it passes → commit. Start at **Task 1**.
 - **Standalone repo, files at root.** The plan was written for a subdirectory;
   ignore any leading `alert-thread-proxy/` in its file paths, and treat any
   `cd alert-thread-proxy` step as a no-op.
-- **Module:** `github.com/dobbo-ca/alert-thread-proxy`. **Image:** `ghcr.io/dobbo-ca/alert-thread-proxy`.
+- **Module:** `github.com/dobbo-ca/alert-thread-proxy`. **Image:** `ghcr.io/dobbo-ca/containers/alert-thread-proxy`.
 - **No third-party Go dependencies** unless a task explicitly adds one. Slack is
   called over raw `net/http`.
 - **Inject the clock** (`now func() time.Time`) in the engine — never call
