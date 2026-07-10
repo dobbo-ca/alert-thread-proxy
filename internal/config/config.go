@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 )
@@ -47,6 +48,7 @@ func envInt(k string, def int) int {
 		if _, err := fmt.Sscanf(v, "%d", &n); err == nil {
 			return n
 		}
+		log.Printf("config: invalid %s=%q, using default", k, v)
 	}
 	return def
 }
@@ -56,6 +58,7 @@ func envDur(k string, def time.Duration) time.Duration {
 		if d, err := time.ParseDuration(v); err == nil {
 			return d
 		}
+		log.Printf("config: invalid %s=%q, using default", k, v)
 	}
 	return def
 }

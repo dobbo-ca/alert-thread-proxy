@@ -28,8 +28,16 @@ func main() {
 	}()
 
 	srv := server.New(eng)
+	httpSrv := &http.Server{
+		Addr:              cfg.ListenAddr,
+		Handler:           srv.Mux(),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 	log.Printf("listening on %s", cfg.ListenAddr)
-	if err := http.ListenAndServe(cfg.ListenAddr, srv.Mux()); err != nil {
+	if err := httpSrv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -47,6 +47,41 @@ func TestWebhookAcksAndDispatches(t *testing.T) {
 	t.Fatal("event not dispatched")
 }
 
+func TestWebhookProcessesInOrder(t *testing.T) {
+	c := &capture{}
+	s := New(c)
+	ids := []string{"a", "b", "c"}
+	for _, id := range ids {
+		body := `{"eventId":"` + id + `","state":"ALERT","title":"t","startTime":1783605600000}`
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(body))
+		s.Mux().ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d", rec.Code)
+		}
+	}
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		c.mu.Lock()
+		n := len(c.evs)
+		c.mu.Unlock()
+		if n == len(ids) {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if len(c.evs) != len(ids) {
+		t.Fatalf("expected %d events, got %d", len(ids), len(c.evs))
+	}
+	for i, id := range ids {
+		if c.evs[i].AlertID != id {
+			t.Fatalf("event %d: expected AlertID %q, got %q (order not preserved)", i, id, c.evs[i].AlertID)
+		}
+	}
+}
+
 func TestWebhookBadPayload(t *testing.T) {
 	s := New(&capture{})
 	rec := httptest.NewRecorder()

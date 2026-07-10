@@ -150,12 +150,9 @@ func (e *Engine) openStormIncident(ev event.AlertEvent, key string) error {
 	}
 	e.storm.Count++
 	e.storm.Expires = e.now().Add(e.cfg.StormWindow)
-	if err := e.slack.UpdateMessage(e.storm.TS, e.stormText(e.storm.Count)); err != nil {
-		return err
-	}
 	now := e.now()
 	e.incidents[key] = &Incident{TS: e.storm.TS, FirstSeen: now, LastReminder: now, InStorm: true}
-	return nil
+	return e.slack.UpdateMessage(e.storm.TS, e.stormText(e.storm.Count))
 }
 
 func (e *Engine) stormText(n int) string {
