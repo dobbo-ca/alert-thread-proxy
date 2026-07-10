@@ -16,8 +16,8 @@ func TestBuildPrefersEventLink(t *testing.T) {
 
 func TestBuildConstructs(t *testing.T) {
 	e := event.AlertEvent{AlertID: "a1"}
-	got := Build("https://hyperdx.tailde247c.ts.net", e)
-	if !strings.HasPrefix(got, "https://hyperdx.tailde247c.ts.net") || !strings.Contains(got, "a1") {
+	got := Build("https://hyperdx.example.com", e)
+	if !strings.HasPrefix(got, "https://hyperdx.example.com") || !strings.Contains(got, "a1") {
 		t.Fatalf("got %q", got)
 	}
 }

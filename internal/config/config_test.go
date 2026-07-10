@@ -8,7 +8,7 @@ import (
 func TestLoadDefaults(t *testing.T) {
 	t.Setenv("SLACK_BOT_TOKEN", "xoxb-test")
 	t.Setenv("SLACK_CHANNEL_ID", "C123")
-	t.Setenv("HYPERDX_BASE_URL", "https://hyperdx.tailde247c.ts.net")
+	t.Setenv("HYPERDX_BASE_URL", "https://hyperdx.example.com")
 	c, err := Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
