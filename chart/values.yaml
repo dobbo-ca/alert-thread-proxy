@@ -73,8 +73,12 @@ livenessProbe:
 
 # The image is distroless :nonroot; these lock it down further (the service
 # writes nothing to disk — state is in-memory — so the root FS can be read-only).
+# runAsUser is the distroless nonroot UID (65532): the image's USER is the name
+# "nonroot", which kubelet can't verify against runAsNonRoot, so pin the number.
 podSecurityContext:
   runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
 securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
