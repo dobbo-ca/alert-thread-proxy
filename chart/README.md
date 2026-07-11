@@ -44,8 +44,26 @@ helm install alert-thread-proxy ./chart -n clickstack --create-namespace \
 | `externalSecret.enabled` | `false` | render the ESO `ExternalSecret` |
 | `service.port` | `80` | in-cluster webhook port (→ container `:8080`) |
 
+## Published OCI chart
+
+On each `v*` release tag, CI packages this chart (version + appVersion set from
+the tag) and pushes it to GHCR:
+
+```
+oci://ghcr.io/dobbo-ca/charts/alert-thread-proxy
+```
+
+Install a released version directly:
+
+```bash
+helm install alert-thread-proxy oci://ghcr.io/dobbo-ca/charts/alert-thread-proxy \
+  --version 0.1.0 -n clickstack --create-namespace \
+  --set config.slackChannelId=C0123456789 \
+  --set config.hyperdxBaseUrl=https://hyperdx.example.com
+```
+
 ## GitOps (Flux) consumption
 
-Reference this chart from a Flux `HelmRelease` — either via a `GitRepository`
-source pointing at this repo's `chart/` path, or against an OCI-published chart
-if CI later runs `helm push`.
+Reference the published OCI chart from a Flux `HelmRelease` via an
+`OCIRepository` source pointing at `oci://ghcr.io/dobbo-ca/charts/alert-thread-proxy`
+(or a `GitRepository` source pointing at this repo's `chart/` path).

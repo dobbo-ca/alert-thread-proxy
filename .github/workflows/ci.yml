@@ -53,3 +53,33 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  chart:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+
+      - name: Lint + render chart
+        run: |
+          helm lint chart/
+          helm template atp chart/ --namespace clickstack \
+            --set config.slackChannelId=C0000000000 \
+            --set config.hyperdxBaseUrl=https://hyperdx.example.com > /dev/null
+
+      # Publish the chart to GHCR as an OCI artifact on version tags only, so the
+      # chart version tracks the release tag. Lands at
+      # ghcr.io/dobbo-ca/charts/alert-thread-proxy:<version>.
+      - name: Publish chart to GHCR (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "$GHCR_TOKEN" | helm registry login ghcr.io --username "${{ github.actor }}" --password-stdin
+          helm package chart/ --version "$VERSION" --app-version "$VERSION"
+          helm push "alert-thread-proxy-${VERSION}.tgz" oci://ghcr.io/dobbo-ca/charts
