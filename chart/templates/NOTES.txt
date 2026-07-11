@@ -1,0 +1,22 @@
+alert-thread-proxy {{ .Chart.AppVersion }} deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+
+In-cluster webhook target (point your HyperDX generic-webhook channel here):
+  http://{{ include "alert-thread-proxy.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}/webhook
+
+The webhook body must be the Handlebars template pinned in
+docs/hyperdx-webhook-notes.md, or the parser will need adjusting.
+{{- if not .Values.externalSecret.enabled }}
+
+NOTE: externalSecret.enabled=false — the Deployment expects an existing Secret
+"{{ .Values.slackBotToken.existingSecret }}" (key "{{ .Values.slackBotToken.secretKey }}") to already exist,
+e.g. materialized by the External Secrets Operator. Set externalSecret.enabled=true
+to have this chart render that ExternalSecret for you.
+{{- end }}
+{{- if or (not .Values.config.slackChannelId) (not .Values.config.hyperdxBaseUrl) }}
+
+WARNING: config.slackChannelId and/or config.hyperdxBaseUrl are empty. Set both —
+the pod will crash-loop on startup without SLACK_CHANNEL_ID:
+  --set config.slackChannelId=C0123456789 --set config.hyperdxBaseUrl=https://hyperdx.example.com
+{{- end }}

@@ -1,0 +1,18 @@
+apiVersion: v2
+name: alert-thread-proxy
+description: HyperDX generic-webhook → threaded, de-noised Slack alerts (single-replica proxy).
+type: application
+# Chart version — bump on chart changes.
+version: 0.1.0
+# App version — the container image tag this chart deploys by default.
+appVersion: "0.1.0"
+home: https://github.com/dobbo-ca/alert-thread-proxy
+sources:
+  - https://github.com/dobbo-ca/alert-thread-proxy
+keywords:
+  - hyperdx
+  - slack
+  - alerting
+  - observability
+maintainers:
+  - name: dobbo-ca

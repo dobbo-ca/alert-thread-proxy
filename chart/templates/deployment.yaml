@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "alert-thread-proxy.fullname" . }}
+  labels:
+    {{- include "alert-thread-proxy.labels" . | nindent 4 }}
+spec:
+  # Single replica BY DESIGN — in-memory thread state must not split, and a
+  # second replica would double-post. Recreate ensures never two at once.
+  # Do NOT parameterize this.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "alert-thread-proxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "alert-thread-proxy.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SLACK_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.slackBotToken.existingSecret }}
+                  key: {{ .Values.slackBotToken.secretKey }}
+            - name: SLACK_CHANNEL_ID
+              value: {{ .Values.config.slackChannelId | quote }}
+            - name: HYPERDX_BASE_URL
+              value: {{ .Values.config.hyperdxBaseUrl | quote }}
+            {{- with .Values.config.stormThreshold }}
+            - name: STORM_THRESHOLD
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.config.stormWindow }}
+            - name: STORM_WINDOW
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.config.reminderInterval }}
+            - name: REMINDER_INTERVAL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.config.threadMaxAge }}
+            - name: THREAD_MAX_AGE
+              value: {{ . | quote }}
+            {{- end }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
