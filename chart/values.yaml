@@ -1,0 +1,88 @@
+# alert-thread-proxy Helm values.
+#
+# IMPORTANT: this service is single-replica BY DESIGN. In-memory state owns the
+# incident→thread mapping; a second replica would split that state and
+# double-post. The Deployment template hard-pins `replicas: 1` and
+# `strategy: Recreate` — there is deliberately NO replicaCount value to change.
+
+image:
+  repository: ghcr.io/dobbo-ca/containers/alert-thread-proxy
+  # Image tag. Empty → defaults to the chart appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+# App configuration (rendered into container env vars).
+config:
+  # REQUIRED: Slack channel ID the proxy posts into (e.g. "C0123456789").
+  slackChannelId: ""
+  # REQUIRED: base URL of the HyperDX UI, used to build deep-links.
+  hyperdxBaseUrl: ""
+  # Optional tunables — only rendered when non-empty. When unset, the binary's
+  # defaults apply: STORM_THRESHOLD=10, STORM_WINDOW=60s, REMINDER_INTERVAL=30m,
+  # THREAD_MAX_AGE=24h.
+  stormThreshold: ""
+  stormWindow: ""
+  reminderInterval: ""
+  threadMaxAge: ""
+
+# Slack bot token source. By default the Deployment reads it from an existing
+# Secret (materialized out-of-band by ESO — see externalSecret below).
+slackBotToken:
+  existingSecret: alert-thread-proxy-slack
+  secretKey: token
+
+# Optionally have THIS chart render the ESO ExternalSecret that materializes the
+# Secret referenced above from AWS SSM. Disabled by default: the design manages
+# ESO separately in k8s-dobbolab. Enabling requires the External Secrets
+# Operator CRDs to be installed in the cluster.
+externalSecret:
+  enabled: false
+  secretStoreRef:
+    name: aws-parameterstore
+    kind: ClusterSecretStore
+  remoteKey: /dobbolab/eso/alert-thread-proxy/slack-bot-token
+  refreshInterval: 1h
+
+service:
+  type: ClusterIP
+  # In-cluster port HyperDX POSTs to (→ container :8080).
+  port: 80
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+# Probes hit GET /healthz on the container port ("http").
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+
+# The image is distroless :nonroot; these lock it down further (the service
+# writes nothing to disk — state is in-memory — so the root FS can be read-only).
+podSecurityContext:
+  runAsNonRoot: true
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
